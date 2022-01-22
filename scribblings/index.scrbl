@@ -23,6 +23,22 @@ $ export HYNOCLI_APP=your_app_name
 $ racket main.rkt --help
 }|
 
+@section{Listing settings}
+
+You can list the settings of a Hypernode with for example:
+@codeblock|{
+$ racket main.rkt settings
+varnish_version: 4.0
+mysql_ft_min_word_len: 4
+...
+}|
+
+To list a specific setting you can do:
+@codeblock|{
+$ racket main.rkt settings php_version
+8.1
+}|
+
 @section{Getting the API token}
 
 Each Hypernode has an API token in @racket[/etc/hypernode/hypernode_api_token] that can be used to talk to @hyperlink["https://community.hypernode.io/#/Documentation/hypernode-api/README"]{the Hypernode API} to list information and configure certain settings for the Hypernode hosting environment to which that token belongs. That token is used by @racket[hypernode-systemctl] which is a command that is installed on every Hypernode but which is also available in the @hyperlink["https://github.com/byteinternet/hypernode-docker"]{hypernode-docker image}.
