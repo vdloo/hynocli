@@ -1,6 +1,7 @@
 #!/usr/bin/env racket
 #lang racket
 
+(require net/uri-codec)
 (require net/http-client)
 (require json)
 
@@ -36,7 +37,7 @@
             (display (format "~a~a: ~a\n" indent hash-key hash-value)))))))
 
 (define do-request
-  (λ (uri method #:data [data #f])
+  (λ (uri method #:data [data #f] #:headers [headers (list (format "Authorization: Token ~a" hynocli-token))])
      (define-values (status header response)
        (http-sendrecv
          api-host
@@ -44,21 +45,35 @@
          #:ssl? #t
          #:data data
          #:method method
-         #:headers (list (format "Authorization: Token ~a" hynocli-token))))
+         #:headers headers))
      (read-json response)))
+
+(define do-patch-request
+  (λ (uri #:data [data #f])
+    (do-request api-settings-url 
+     "PATCH" 
+     #:data data
+     #:headers
+       (list 
+         (format "Authorization: Token ~a" hynocli-token)
+          "Content-Type: application/x-www-form-urlencoded"))))
 
 (define settings
   (λ (args)
      (let ([settings-response (do-request api-settings-url "GET")])
        (if (empty? args)
          (pretty-print-hasheq settings-response)
-         (if (empty? (cdr args))
-           (displayln
-             (hash-ref
-               settings-response
-               (string->symbol (car args))
-               (λ () (raise (format "No setting '~a' exists!" (car args))))))
-           (displayln "Patching settings not implemented yet!"))))))
+         (displayln
+           (hash-ref
+             (if (empty? (cdr args))
+                settings-response
+                (do-patch-request
+                  api-settings-url
+                  #:data 
+                  (alist->form-urlencoded
+                    (list (cons (string->symbol (car args)) (cadr args))))))
+             (string->symbol (car args))
+             (λ () (raise (format "No setting '~a' exists!" (car args))))))))))
 
 (define hynocli
   (λ (args)

@@ -14,4 +14,4 @@ docs: clean
 	scribble --html +m --redirect-main http://docs.racket-lang.org/ --dest docs scribblings/index.scrbl
 
 test:
-	raco test hynocli/test
+	bash -c 'export HYNOCLI_APP=test; export HYNOCLI_TOKEN=test; raco test hynocli/test'

@@ -23,7 +23,7 @@ $ export HYNOCLI_APP=your_app_name
 $ racket main.rkt --help
 }|
 
-@section{Listing settings}
+@section{Listing and configuring settings}
 
 You can list the settings of a Hypernode with for example:
 @codeblock|{
@@ -37,6 +37,12 @@ To list a specific setting you can do:
 @codeblock|{
 $ racket main.rkt settings php_version
 8.1
+}|
+
+To set a setting you can do:
+@codeblock|{
+$ racket main.rkt settings php_version 8.0
+8.0
 }|
 
 @section{Getting the API token}
