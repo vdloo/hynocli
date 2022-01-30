@@ -6,11 +6,18 @@
 (require json)
 
 (provide hynocli)
+(provide http-sendrecv-factory)
+(provide read-json-factory)
+(provide displayln-factory)
 
 (define api-host "api.hypernode.com")
 (define api-url "/v1/")
 (define api-app-url (format "~aapp/" api-url))
 (define environment-variables (current-environment-variables))
+
+(define http-sendrecv-factory (make-parameter http-sendrecv))
+(define read-json-factory (make-parameter read-json))
+(define displayln-factory (make-parameter displayln))
 
 (define-syntax-rule (configure-environment-variables env-var-var-name env-var-name message)
   (begin
@@ -38,15 +45,17 @@
 
 (define do-request
   (λ (uri method #:data [data #f] #:headers [headers (list (format "Authorization: Token ~a" hynocli-token))])
-     (define-values (status header response)
-       (http-sendrecv
-         api-host
-         uri
-         #:ssl? #t
-         #:data data
-         #:method method
-         #:headers headers))
-     (read-json response)))
+     (let ([http-sendrecv (http-sendrecv-factory)]
+	   [read-json (read-json-factory)])
+       (define-values (status header response)
+         (http-sendrecv
+           api-host
+           uri
+           #:ssl? #t
+           #:data data
+           #:method method
+           #:headers headers))
+       (read-json response))))
 
 (define do-patch-request
   (λ (uri #:data [data #f])
@@ -58,22 +67,35 @@
          (format "Authorization: Token ~a" hynocli-token)
           "Content-Type: application/x-www-form-urlencoded"))))
 
+(define print-specific-setting
+  (λ (setting-to-print settings-response)
+   (let ([displayln (displayln-factory)])
+     (displayln
+       (hash-ref
+         settings-response
+         (string->symbol setting-to-print)
+         (λ () (raise (format "No setting '~a' exists!" setting-to-print))))))))
+
+(define patch-setting
+  (λ (api-settings-url setting value)
+    (do-patch-request
+      api-settings-url
+      #:data
+      (alist->form-urlencoded
+	(list (cons (string->symbol setting) value))))))
+
 (define settings
   (λ (args)
      (let ([settings-response (do-request api-settings-url "GET")])
        (if (empty? args)
          (pretty-print-hasheq settings-response)
-         (displayln
-           (hash-ref
-             (if (empty? (cdr args))
-                settings-response
-                (do-patch-request
-                  api-settings-url
-                  #:data 
-                  (alist->form-urlencoded
-                    (list (cons (string->symbol (car args)) (cadr args))))))
-             (string->symbol (car args))
-             (λ () (raise (format "No setting '~a' exists!" (car args))))))))))
+	 (print-specific-setting (car args)
+           (if (empty? (cdr args))
+	     settings-response
+	     (patch-setting
+	       api-settings-url
+	       (car args)
+	       (cadr args))))))))
 
 (define hynocli
   (λ (args)
