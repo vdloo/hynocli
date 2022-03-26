@@ -16,4 +16,9 @@ $ export HYNOCLI_APP=your_app_name
 $ racket main.rkt --help
 ```
 
+Then you can change a setting like for example:
+```
+$ racket main.rkt settings php_version 8.1
+```
+
 Check out the full documentation on [https://vdloo.github.io/hynocli/](https://vdloo.github.io/hynocli/)
